@@ -267,6 +267,16 @@
     color: var(--text-sec); transition: all .15s; font-size: 15px;
   }
   .icon-btn:hover { border-color: var(--border-sec); color: var(--text); }
+  .modal-action-btns { display: flex; gap: 8px; margin-top: 1rem; }
+  .modal-action-btns button {
+    flex: 1; padding: 10px 8px;
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; cursor: pointer; font-family: var(--font);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--bg-sec); color: var(--text); transition: all .15s;
+  }
+  .modal-action-btns .btn-del { background: #FCEBEB; border-color: #A32D2D; color: #791F1F; }
+  @media (max-width: 600px) { .prod-actions { display: none; } }
   /* EMPTY */
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text-sec); }
   .empty i { font-size: 40px; display: block; margin-bottom: 10px; opacity: .5; }
@@ -662,6 +672,11 @@ function showDetail(i) {
     html += `<p style="font-size:12px;color:var(--text-sec);margin:14px 0 8px"><i class="ti ti-photo"></i> ${p.photos.length} photo(s)</p>
     <div class="detail-photos">${p.photos.map(ph=>`<img src="${ph.data}" alt="${ph.name}" onclick="openLightbox('${ph.data.replace(/'/g,"\\'")}')">`).join('')}</div>`;
   }
+  html += `<div class="modal-action-btns">
+    <button onclick="closeModal();editProduct(${i})"><i class="ti ti-edit"></i> Modifier</button>
+    <button onclick="closeModal();goReport(${i})"><i class="ti ti-file-description"></i> Rapport</button>
+    <button class="btn-del" onclick="closeModal();deleteProduct(${i})"><i class="ti ti-trash"></i> Supprimer</button>
+  </div>`;
   document.getElementById('modal-body').innerHTML = html;
   document.getElementById('detail-modal').style.display = 'block';
 }
