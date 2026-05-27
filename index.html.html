@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAV Manager — Suivi produits retournés</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-sec: #f5f5f3;
+    --bg-ter: #eeede8;
+    --text: #1a1a19;
+    --text-sec: #6b6b67;
+    --text-ter: #9b9b97;
+    --border: rgba(0,0,0,0.12);
+    --border-sec: rgba(0,0,0,0.22);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --font: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Mono', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg-sec: #252523;
+      --bg-ter: #2e2e2b;
+      --text: #f0efea;
+      --text-sec: #9b9b97;
+      --text-ter: #6b6b67;
+      --border: rgba(255,255,255,0.1);
+      --border-sec: rgba(255,255,255,0.2);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-ter);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+  /* TOPBAR */
+  .topbar {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .topbar-brand i { font-size: 20px; color: var(--text-sec); }
+  .topbar-count {
+    font-size: 12px;
+    background: var(--bg-sec);
+    border: 0.5px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    color: var(--text-sec);
+  }
+  /* LAYOUT */
+  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.25rem; }
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 400;
+    background: transparent;
+    color: var(--text-sec);
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font);
+  }
+  .tab:not(:last-child) { border-right: 0.5px solid var(--border); }
+  .tab.active { background: var(--bg-sec); color: var(--text); font-weight: 500; }
+  .section { display: none; }
+  .section.active { display: block; }
+  /* FORM */
+  .card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sec);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-sec);
+    margin-bottom: 5px;
+  }
+  input[type=text], input[type=date], select, textarea {
+    width: 100%;
+    background: var(--bg-sec);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--border-sec);
+    background: var(--bg);
+  }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .row { grid-template-columns: 1fr; } }
+  /* STATUS */
+  .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .status-btn {
+    padding: 10px 8px;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--bg-sec);
+    color: var(--text-sec);
+    transition: all .15s;
+    font-family: var(--font);
+    line-height: 1.4;
+  }
+  .status-btn i { display: block; font-size: 18px; margin-bottom: 4px; }
+  .status-btn:hover { border-color: var(--border-sec); }
+  .status-btn.sel-bon { background: #EAF3DE; border-color: #639922; color: #3B6D11; }
+  .status-btn.sel-moyen { background: #FAEEDA; border-color: #BA7517; color: #854F0B; }
+  .status-btn.sel-mauvais { background: #FCEBEB; border-color: #A32D2D; color: #791F1F; }
+  .status-btn.sel-irreparable { background: #2e2e2b; border-color: #5F5E5A; color: #D3D1C7; }
+  /* PHOTO */
+  .photo-zone {
+    border: 1px dashed var(--border-sec);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-sec);
+    position: relative;
+    transition: all .15s;
+  }
+  .photo-zone:hover { border-color: var(--text-sec); }
+  .photo-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .photo-zone i { font-size: 28px; color: var(--text-sec); display: block; margin-bottom: 6px; }
+  .photo-zone p { font-size: 13px; color: var(--text-sec); }
+  .photo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+  @media (max-width: 500px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+  .photo-thumb {
+    position: relative; aspect-ratio: 1;
+    border-radius: var(--radius); overflow: hidden;
+    border: 0.5px solid var(--border);
+  }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-del {
+    position: absolute; top: 4px; right: 4px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,0,0,0.65); color: #fff; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+  }
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%; padding: 11px;
+    background: var(--text); border: none; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; color: var(--bg);
+    font-family: var(--font); font-weight: 500;
+    transition: opacity .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    padding: 8px 14px; background: var(--bg-sec);
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; cursor: pointer; color: var(--text);
+    font-family: var(--font); transition: all .15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-secondary:hover { border-color: var(--border-sec); }
+  /* NOTICE */
+  .notice {
+    background: var(--bg-sec); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+    font-size: 13px; color: var(--text-sec);
+    display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;
+  }
+  /* PRODUCT LIST */
+  .products-list { display: flex; flex-direction: column; gap: 10px; }
+  .prod-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .prod-card:hover { border-color: var(--border-sec); }
+  .prod-icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: var(--radius); background: var(--bg-sec);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-sec);
+  }
+  .prod-icon i { font-size: 20px; }
+  .prod-info { flex: 1; min-width: 0; }
+  .prod-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prod-sub { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+  .badge {
+    display: inline-block; padding: 3px 9px;
+    border-radius: 999px; font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .b-bon { background: #EAF3DE; color: #3B6D11; }
+  .b-moyen { background: #FAEEDA; color: #854F0B; }
+  .b-mauvais { background: #FCEBEB; color: #791F1F; }
+  .b-irreparable { background: #D3D1C7; color: #2C2C2A; }
+  .prod-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-sec); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-sec); transition: all .15s; font-size: 15px;
+  }
+  .icon-btn:hover { border-color: var(--border-sec); color: var(--text); }
+  /* EMPTY */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text-sec); }
+  .empty i { font-size: 40px; display: block; margin-bottom: 10px; opacity: .5; }
+  .empty p { font-size: 14px; }
+  /* REPORT */
+  .report-box {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .report-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .report-actions button {
+    flex: 1; padding: 9px;
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; cursor: pointer;
+    background: var(--bg-sec); color: var(--text);
+    font-family: var(--font); transition: all .15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .report-actions button:hover { border-color: var(--border-sec); }
+  /* MODAL */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; padding: 1rem;
+  }
+  .modal {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    padding: 1.5rem;
+    width: 100%; max-width: 580px;
+    max-height: 88vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 1.25rem;
+  }
+  .modal-header h3 { font-size: 16px; font-weight: 500; }
+  .modal-close {
+    background: var(--bg-sec); border: 0.5px solid var(--border);
+    border-radius: var(--radius); cursor: pointer; color: var(--text-sec);
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; margin-left: 12px;
+  }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 9px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; gap: 12px;
+  }
+  .detail-label { color: var(--text-sec); flex-shrink: 0; }
+  .detail-val { text-align: right; word-break: break-word; max-width: 60%; }
+  .detail-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+  .detail-photos img {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    border-radius: var(--radius); border: 0.5px solid var(--border); cursor: pointer;
+  }
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  @media (max-width: 500px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .stat-val { font-size: 24px; font-weight: 600; }
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 1rem; }
+  .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-ter); }
+  .search-wrap input { padding-left: 36px; background: var(--bg); }
+  /* PRINT */
+  @media print {
+    body { background: white; }
+    .topbar, .tabs, .section:not(.active), .prod-actions, .report-actions { display: none !important; }
+    .report-box { max-height: none; border: none; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-brand" href="#">
+    <i class="ti ti-tools"></i>
+    SAV Manager
+  </a>
+  <span class="topbar-count" id="top-count">0 produit</span>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('form')"><i class="ti ti-plus"></i> Nouveau produit</button>
+    <button class="tab" onclick="switchTab('list')"><i class="ti ti-list"></i> Produits <span id="count-badge"></span></button>
+    <button class="tab" onclick="switchTab('reports')"><i class="ti ti-file-description"></i> Rapports</button>
+  </div>
+
+  <!-- FORM -->
+  <div id="s-form" class="section active">
+    <div class="notice"><i class="ti ti-info-circle"></i> Remplis les informations du produit retourné en SAV</div>
+
+    <div class="card">
+      <p class="card-title"><i class="ti ti-id-badge"></i> Identification</p>
+      <div class="row">
+        <div class="field"><label>Référence / N° dossier</label><input type="text" id="f-ref" placeholder="SAV-2026-001"></div>
+        <div class="field"><label>Date de retour</label><input type="date" id="f-date"></div>
+      </div>
+      <div class="field"><label>Nom du produit</label><input type="text" id="f-name" placeholder="Ex : Panneau solaire 400W Monocrystallin JA Solar"></div>
+      <div class="row">
+        <div class="field"><label>Marque / Fabricant</label><input type="text" id="f-brand" placeholder="Ex : JA Solar, SolaX, Fronius..."></div>
+        <div class="field"><label>Numéro de série</label><input type="text" id="f-serial" placeholder="Ex : SN-78493021"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><i class="ti ti-user"></i> Intervenants</p>
+      <div class="row">
+        <div class="field"><label>Client</label><input type="text" id="f-client" placeholder="Nom du client"></div>
+        <div class="field"><label>Technicien SAV</label><input type="text" id="f-tech" placeholder="Votre nom"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><i class="ti ti-activity"></i> État du produit</p>
+      <div class="status-grid">
+        <button class="status-btn" onclick="setStatus('bon',this)"><i class="ti ti-circle-check"></i>Bon état</button>
+        <button class="status-btn" onclick="setStatus('moyen',this)"><i class="ti ti-alert-triangle"></i>État moyen</button>
+        <button class="status-btn" onclick="setStatus('mauvais',this)"><i class="ti ti-alert-circle"></i>Mauvais état</button>
+        <button class="status-btn" onclick="setStatus('reparable',this)"><i class="ti ti-tool"></i>Réparable</button>
+        <button class="status-btn" onclick="setStatus('irreparable',this)" style="grid-column:span 2"><i class="ti ti-ban"></i>Irréparable</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><i class="ti ti-clipboard-text"></i> Diagnostic</p>
+      <div class="field"><label>Description du problème constaté</label><textarea id="f-prob" placeholder="Décrire le défaut, les symptômes, les conditions d'apparition, les tests effectués..."></textarea></div>
+      <div class="field"><label>Action réalisée / préconisée</label><textarea id="f-action" placeholder="Remplacement de pièce, réparation, retour fabricant, refus de prise en charge..."></textarea></div>
+      <div class="field"><label>Notes internes (facultatif)</label><textarea id="f-notes" placeholder="Remarques complémentaires, références de pièces, délais, contacts..." style="min-height:60px"></textarea></div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><i class="ti ti-photo"></i> Photos</p>
+      <div class="photo-zone" id="photo-zone">
+        <input type="file" accept="image/*" multiple onchange="addPhotos(event)">
+        <i class="ti ti-photo-plus"></i>
+        <p>Clique ou dépose tes photos ici</p>
+        <p style="font-size:11px;color:var(--text-ter);margin-top:4px">JPG, PNG — plusieurs fichiers acceptés</p>
+      </div>
+      <div class="photo-grid" id="photo-grid"></div>
+      <p id="photo-count" style="font-size:12px;color:var(--text-sec);margin-top:8px"></p>
+    </div>
+
+    <button class="btn-primary" onclick="saveProduct()"><i class="ti ti-device-floppy"></i> Enregistrer le produit SAV</button>
+  </div>
+
+  <!-- LIST -->
+  <div id="s-list" class="section">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="search-wrap">
+      <i class="ti ti-search"></i>
+      <input type="text" id="search-input" placeholder="Rechercher par nom, référence, client..." oninput="renderList()">
+    </div>
+    <div id="prod-list" class="products-list"></div>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="s-reports" class="section">
+    <div class="card">
+      <p class="card-title"><i class="ti ti-file-description"></i> Générer un rapport</p>
+      <div class="field">
+        <label>Sélectionner un produit</label>
+        <select id="report-picker" onchange="generateReport()"><option value="">-- Choisir un produit --</option></select>
+      </div>
+    </div>
+    <div id="report-output" style="display:none">
+      <div class="report-box" id="report-content"></div>
+      <div class="report-actions">
+        <button onclick="copyReport()"><i class="ti ti-copy"></i> Copier</button>
+        <button onclick="printReport()"><i class="ti ti-printer"></i> Imprimer</button>
+        <button onclick="exportTxt()"><i class="ti ti-download"></i> Télécharger .txt</button>
+      </div>
+    </div>
+    <div id="report-empty" class="empty"><i class="ti ti-file-off"></i><p>Enregistre un produit pour générer son rapport</p></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal" style="display:none">
+  <div class="modal-bg" onclick="closeModalBg(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Détail produit</h3>
+        <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('lightbox').style.display='none'">
+  <img id="lightbox-img" style="max-width:92%;max-height:92vh;border-radius:8px;object-fit:contain">
+</div>
+
+<script>
+let products = [];
+let currentStatus = '';
+let currentPhotos = [];
+let editIndex = -1;
+
+try { products = JSON.parse(localStorage.getItem('sav_products') || '[]'); } catch(e) { products = []; }
+
+const statusLabel = { bon:'Bon état', moyen:'État moyen', mauvais:'Mauvais état', irreparable:'Irréparable', reparable:'Réparable', 'non défini':'Non défini' };
+const badgeClass = { bon:'b-bon', moyen:'b-moyen', mauvais:'b-mauvais', irreparable:'b-irreparable', reparable:'b-moyen', 'non défini':'b-moyen' };
+
+function save() { localStorage.setItem('sav_products', JSON.stringify(products)); }
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', ['form','list','reports'][i]===t));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+t).classList.add('active');
+  if(t==='list') renderList();
+  if(t==='reports') renderReportPicker();
+}
+
+function setStatus(s, btn) {
+  currentStatus = s;
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('sel-bon','sel-moyen','sel-mauvais','sel-irreparable'));
+  const map = { bon:'sel-bon', moyen:'sel-moyen', mauvais:'sel-mauvais', irreparable:'sel-irreparable', reparable:'sel-moyen' };
+  btn.classList.add(map[s]||'sel-moyen');
+}
+
+function addPhotos(e) {
+  Array.from(e.target.files).forEach(f => {
+    const r = new FileReader();
+    r.onload = ev => { currentPhotos.push({ name: f.name, data: ev.target.result }); renderThumbs(); };
+    r.readAsDataURL(f);
+  });
+}
+
+function renderThumbs() {
+  const g = document.getElementById('photo-grid');
+  g.innerHTML = currentPhotos.map((p,i) => `
+    <div class="photo-thumb">
+      <img src="${p.data}" alt="${p.name}" onclick="openLightbox('${p.data.replace(/'/g,"\\'")}')">
+      <button class="photo-del" onclick="removePhoto(${i})"><i class="ti ti-x" style="font-size:10px"></i></button>
+    </div>`).join('');
+  document.getElementById('photo-count').textContent = currentPhotos.length ? `${currentPhotos.length} photo(s) ajoutée(s)` : '';
+}
+
+function removePhoto(i) { currentPhotos.splice(i,1); renderThumbs(); }
+
+function saveProduct() {
+  const name = document.getElementById('f-name').value.trim();
+  if(!name) { alert('Merci de renseigner le nom du produit.'); return; }
+  const p = {
+    ref: document.getElementById('f-ref').value.trim() || ('SAV-'+Date.now()),
+    date: document.getElementById('f-date').value || new Date().toISOString().slice(0,10),
+    name,
+    brand: document.getElementById('f-brand').value.trim(),
+    serial: document.getElementById('f-serial').value.trim(),
+    client: document.getElementById('f-client').value.trim(),
+    tech: document.getElementById('f-tech').value.trim(),
+    status: currentStatus || 'non défini',
+    problem: document.getElementById('f-prob').value.trim(),
+    action: document.getElementById('f-action').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    photos: currentPhotos.slice(),
+    createdAt: new Date().toISOString()
+  };
+  if(editIndex >= 0) { products[editIndex] = p; editIndex = -1; } else { products.unshift(p); }
+  save();
+  resetForm();
+  updateTopCount();
+  switchTab('list');
+}
+
+function resetForm() {
+  ['f-ref','f-date','f-name','f-brand','f-serial','f-client','f-tech','f-prob','f-action','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  currentStatus = ''; currentPhotos = [];
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('sel-bon','sel-moyen','sel-mauvais','sel-irreparable'));
+  renderThumbs();
+  editIndex = -1;
+  document.querySelector('.btn-primary').innerHTML = '<i class="ti ti-device-floppy"></i> Enregistrer le produit SAV';
+}
+
+function updateTopCount() {
+  const n = products.length;
+  document.getElementById('top-count').textContent = n + (n>1 ? ' produits' : ' produit');
+  document.getElementById('count-badge').textContent = n ? `(${n})` : '';
+}
+
+function formatDate(d) {
+  if(!d) return '—';
+  const [y,m,j] = d.split('-');
+  return `${j}/${m}/${y}`;
+}
+
+function renderStats() {
+  const counts = { bon:0, moyen:0, mauvais:0, irreparable:0, reparable:0 };
+  products.forEach(p => { if(counts[p.status]!==undefined) counts[p.status]++; });
+  const total = products.length;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><p class="stat-label">Total</p><p class="stat-val">${total}</p></div>
+    <div class="stat-card"><p class="stat-label">Réparables</p><p class="stat-val" style="color:#3B6D11">${counts.bon+counts.reparable}</p></div>
+    <div class="stat-card"><p class="stat-label">Mauvais état</p><p class="stat-val" style="color:#854F0B">${counts.mauvais+counts.moyen}</p></div>
+    <div class="stat-card"><p class="stat-label">Irréparables</p><p class="stat-val" style="color:#791F1F">${counts.irreparable}</p></div>
+  `;
+}
+
+function renderList() {
+  renderStats();
+  const q = (document.getElementById('search-input').value||'').toLowerCase();
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.ref.toLowerCase().includes(q) ||
+    (p.client||'').toLowerCase().includes(q)
+  );
+  const el = document.getElementById('prod-list');
+  if(!filtered.length) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-inbox"></i><p>${q ? 'Aucun résultat pour "'+q+'"' : 'Aucun produit enregistré'}</p></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map((p) => {
+    const i = products.indexOf(p);
+    return `<div class="prod-card" onclick="showDetail(${i})">
+      <div class="prod-icon"><i class="ti ti-package"></i></div>
+      <div class="prod-info">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-sub">${p.ref} · ${p.client||'Client non renseigné'} · ${formatDate(p.date)}${p.photos&&p.photos.length?` · <i class="ti ti-photo" style="font-size:12px"></i> ${p.photos.length}`:''}</div>
+      </div>
+      <span class="badge ${badgeClass[p.status]||'b-moyen'}">${statusLabel[p.status]||p.status}</span>
+      <div class="prod-actions" onclick="event.stopPropagation()">
+        <button class="icon-btn" title="Modifier" onclick="editProduct(${i})"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" title="Rapport" onclick="goReport(${i})"><i class="ti ti-file-description"></i></button>
+        <button class="icon-btn" title="Supprimer" onclick="deleteProduct(${i})"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  updateTopCount();
+}
+
+function deleteProduct(i) {
+  if(!confirm('Supprimer ce produit ?')) return;
+  products.splice(i,1); save(); renderList();
+}
+
+function editProduct(i) {
+  const p = products[i];
+  editIndex = i;
+  document.getElementById('f-ref').value = p.ref;
+  document.getElementById('f-date').value = p.date;
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-brand').value = p.brand||'';
+  document.getElementById('f-serial').value = p.serial||'';
+  document.getElementById('f-client').value = p.client||'';
+  document.getElementById('f-tech').value = p.tech||'';
+  document.getElementById('f-prob').value = p.problem||'';
+  document.getElementById('f-action').value = p.action||'';
+  document.getElementById('f-notes').value = p.notes||'';
+  currentStatus = p.status;
+  currentPhotos = (p.photos||[]).slice();
+  renderThumbs();
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('sel-bon','sel-moyen','sel-mauvais','sel-irreparable'));
+  const map = { bon:'sel-bon', moyen:'sel-moyen', mauvais:'sel-mauvais', irreparable:'sel-irreparable', reparable:'sel-moyen' };
+  document.querySelectorAll('.status-btn').forEach(b => {
+    if(b.textContent.includes(statusLabel[p.status]||p.status)) b.classList.add(map[p.status]||'sel-moyen');
+  });
+  document.querySelector('.btn-primary').innerHTML = '<i class="ti ti-pencil"></i> Mettre à jour le produit';
+  switchTab('form');
+  window.scrollTo(0, 0);
+}
+
+function showDetail(i) {
+  const p = products[i];
+  document.getElementById('modal-title').textContent = p.name;
+  const rows = [
+    ['Référence', p.ref], ['Date de retour', formatDate(p.date)],
+    ['Marque', p.brand||'—'], ['N° de série', p.serial||'—'],
+    ['Client', p.client||'—'], ['Technicien', p.tech||'—'],
+    ['État', `<span class="badge ${badgeClass[p.status]||'b-moyen'}">${statusLabel[p.status]||p.status}</span>`],
+    ['Problème', p.problem||'—'], ['Action', p.action||'—'], ['Notes', p.notes||'—'],
+  ];
+  let html = rows.map(([l,v]) => `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-val">${v}</span></div>`).join('');
+  if(p.photos && p.photos.length) {
+    html += `<p style="font-size:12px;color:var(--text-sec);margin:14px 0 8px"><i class="ti ti-photo"></i> ${p.photos.length} photo(s)</p>
+    <div class="detail-photos">${p.photos.map(ph=>`<img src="${ph.data}" alt="${ph.name}" onclick="openLightbox('${ph.data.replace(/'/g,"\\'")}')">`).join('')}</div>`;
+  }
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('detail-modal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
+function closeModalBg(e) { if(e.target.classList.contains('modal-bg')) closeModal(); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') { closeModal(); document.getElementById('lightbox').style.display='none'; }});
+
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+
+function renderReportPicker() {
+  const sel = document.getElementById('report-picker');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">-- Choisir un produit --</option>' + products.map((p,i) => `<option value="${i}">${p.ref} — ${p.name}</option>`).join('');
+  sel.value = val;
+  if(!products.length) {
+    document.getElementById('report-output').style.display = 'none';
+    document.getElementById('report-empty').style.display = 'block';
+  }
+}
+
+function generateReport() {
+  const i = document.getElementById('report-picker').value;
+  if(i==='') { document.getElementById('report-output').style.display='none'; document.getElementById('report-empty').style.display='block'; return; }
+  const p = products[parseInt(i)];
+  const sep = '━'.repeat(52);
+  const now = new Date();
+  const lines = [
+    `RAPPORT SAV`,
+    sep,
+    `Référence dossier  : ${p.ref}`,
+    `Date de retour     : ${formatDate(p.date)}`,
+    `Rapport généré le  : ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}`,
+    sep,
+    `PRODUIT`,
+    `  Désignation      : ${p.name}`,
+    `  Marque           : ${p.brand||'—'}`,
+    `  N° de série      : ${p.serial||'—'}`,
+    sep,
+    `CLIENT & INTERVENANT`,
+    `  Client           : ${p.client||'—'}`,
+    `  Technicien SAV   : ${p.tech||'—'}`,
+    sep,
+    `ÉTAT DU PRODUIT    : ${(statusLabel[p.status]||p.status).toUpperCase()}`,
+    sep,
+    `PROBLÈME CONSTATÉ`,
+    p.problem ? p.problem.split('\n').map(l=>'  '+l).join('\n') : '  (non renseigné)',
+    '',
+    `ACTION RÉALISÉE / PRÉCONISÉE`,
+    p.action ? p.action.split('\n').map(l=>'  '+l).join('\n') : '  (non renseignée)',
+    '',
+    `NOTES INTERNES`,
+    p.notes ? p.notes.split('\n').map(l=>'  '+l).join('\n') : '  (aucune)',
+    sep,
+    `Pièces jointes     : ${(p.photos||[]).length} photo(s)`,
+    sep,
+  ];
+  document.getElementById('report-content').textContent = lines.join('\n');
+  document.getElementById('report-output').style.display = 'block';
+  document.getElementById('report-empty').style.display = 'none';
+}
+
+function goReport(i) {
+  switchTab('reports');
+  setTimeout(() => { document.getElementById('report-picker').value = i; generateReport(); }, 50);
+}
+
+function copyReport() {
+  navigator.clipboard.writeText(document.getElementById('report-content').textContent)
+    .then(() => alert('Rapport copié !'));
+}
+
+function printReport() {
+  const txt = document.getElementById('report-content').textContent;
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport SAV</title><style>body{font-family:monospace;font-size:13px;padding:2rem;line-height:1.8}pre{white-space:pre-wrap}</style></head><body><pre>${txt.replace(/</g,'&lt;')}</pre></body></html>`);
+  w.document.close(); w.print();
+}
+
+function exportTxt() {
+  const txt = document.getElementById('report-content').textContent;
+  const ref = document.getElementById('report-picker').selectedOptions[0].text.split('—')[0].trim();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }));
+  a.download = `rapport-sav-${ref}.txt`;
+  a.click();
+}
+
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+updateTopCount();
+</script>
+</body>
+</html>
